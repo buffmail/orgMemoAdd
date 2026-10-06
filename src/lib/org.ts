@@ -13,10 +13,16 @@ export function formatEntry(memo: string): string {
   return ['', `memo: ${first}`, ...rest.map(escapeBodyLine)].join('\n') + '\n';
 }
 
-/** Appends the entry to the end of the file, keeping exactly one newline before it. */
+/**
+ * Appends the entry, leaving exactly one blank line before it however the file
+ * happened to end - trailing blank lines are common in org files and would
+ * otherwise stack up.
+ */
 export function appendEntry(existing: string, entry: string): string {
-  if (existing === '') return entry.replace(/^\n/, '');
-  return (existing.endsWith('\n') ? existing : `${existing}\n`) + entry;
+  const base = existing.replace(/\s+$/, '');
+  if (base === '') return entry.replace(/^\n/, '');
+
+  return `${base}\n${entry}`;
 }
 
 /** `memo: ...` / `note: ...` */
