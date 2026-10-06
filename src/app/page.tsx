@@ -225,6 +225,9 @@ export default function Home() {
 
       {tail && tail.body.length > 0 && (
         <section className="entries">
+          <button type="button" className="fold" onClick={() => setUnfolded(!unfolded)}>
+            {unfolded ? '▾ fold' : '▸ unfold'}
+          </button>
           {unfolded ? (
             <pre className="body">{tail.body.join('\n')}</pre>
           ) : (
@@ -235,9 +238,6 @@ export default function Home() {
               </p>
             ))
           )}
-          <button type="button" className="fold" onClick={() => setUnfolded(!unfolded)}>
-            {unfolded ? '▾ fold' : '▸ unfold'}
-          </button>
         </section>
       )}
 
