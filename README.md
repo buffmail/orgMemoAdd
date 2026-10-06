@@ -44,7 +44,7 @@ everything on the Permissions tab — so omitting it is right for both.
 ## Local run
 
 ```bash
-nvm use            # Node 20+
+nvm use            # Node 22 (see .nvmrc)
 npm install
 cp .env.local.example .env.local   # then paste DROPBOX_APP_SECRET
 npm run dev
@@ -59,6 +59,9 @@ appears. `⌘/Ctrl + Enter` appends.
 npx vercel          # first run links the project
 npx vercel --prod
 ```
+
+The Node version is pinned to 22 by `engines.node` in `package.json`, which is
+what Vercel reads — it ignores `.nvmrc`, which is there for local `nvm use`.
 
 Or import `buffmail/orgMemoAdd` at <https://vercel.com/new>. Either way, add the
 environment variables (at least `DROPBOX_APP_SECRET`) under Project → Settings →
