@@ -125,6 +125,18 @@ It listens on the callback URL the app already uses, prints the authorize link,
 and writes `DROPBOX_REFRESH_TOKEN=…` to the terminal. Paste it into `.env.local`
 and into Vercel — along with `APP_PASSCODE`.
 
+## Icon
+
+`src/app/icon.svg` is the browser icon and `src/app/apple-icon.png` (180x180) the
+iOS home-screen icon; Next picks both up by filename, so no metadata wiring. The
+apple icon is deliberately full-bleed because iOS applies its own rounded mask,
+which would otherwise double-round the corners. Regenerate the PNG after editing
+the SVG:
+
+```bash
+rsvg-convert -w 180 -h 180 src/app/icon.svg -o src/app/apple-icon.png   # then remove the rx on the rect
+```
+
 ## Routes
 
 | Route | Purpose |
