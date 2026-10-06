@@ -28,31 +28,47 @@ export function appendEntry(existing: string, entry: string): string {
 /** `memo: ...` / `note: ...` */
 const ENTRY = /^(memo|note):[ \t]*(.*)$/;
 
-/** A bullet or an org heading starts a new subject, which ends the tail. */
-const SUBJECT = /^(?:\s*[-+]\s|\*+\s)/;
+/** Only an org heading starts a new subject; bullets are items inside one. */
+const SUBJECT = /^\*+(?:\s|$)/;
 
 export type Entry = { kind: 'memo' | 'note'; text: string };
 
-/**
- * Collects the `memo:`/`note:` lines at the end of the file, walking backwards
- * and stopping at the first bullet or heading above them.
- */
-export function recentEntries(content: string): Entry[] {
+export type Tail = {
+  /** The last org heading in the file - the subject being added to. */
+  title: string | null;
+  /** The `memo:`/`note:` lines under it. */
+  entries: Entry[];
+  /** Everything under it, verbatim. */
+  body: string[];
+};
+
+function withoutOuterBlanks(lines: string[]): string[] {
+  const out = [...lines];
+  while (out.length && !out[0].trim()) out.shift();
+  while (out.length && !out[out.length - 1].trim()) out.pop();
+
+  return out;
+}
+
+/** Everything below the last org heading in the file. */
+export function tailSection(content: string): Tail {
   const lines = content.replace(/\r\n?/g, '\n').split('\n');
-  const found: Entry[] = [];
 
+  let subject = -1;
   for (let i = lines.length - 1; i >= 0; i -= 1) {
-    const line = lines[i];
-    if (!line.trim()) continue;
-
-    const entry = ENTRY.exec(line);
-    if (entry) {
-      found.push({ kind: entry[1] as Entry['kind'], text: entry[2].trim() });
-      continue;
+    if (SUBJECT.test(lines[i])) {
+      subject = i;
+      break;
     }
-
-    if (SUBJECT.test(line)) break;
   }
 
-  return found.reverse();
+  const body = withoutOuterBlanks(lines.slice(subject + 1));
+  const entries: Entry[] = [];
+
+  for (const line of body) {
+    const entry = ENTRY.exec(line);
+    if (entry) entries.push({ kind: entry[1] as Entry['kind'], text: entry[2].trim() });
+  }
+
+  return { title: subject === -1 ? null : lines[subject].trim(), entries, body };
 }

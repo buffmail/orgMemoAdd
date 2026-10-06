@@ -16,11 +16,14 @@ type Status = {
 
 type Entry = { kind: 'memo' | 'note'; text: string };
 
+type Tail = { title: string | null; entries: Entry[]; body: string[] };
+
 type Message = { kind: 'ok' | 'err'; text: string } | null;
 
 export default function Home() {
   const [status, setStatus] = useState<Status | null>(null);
-  const [entries, setEntries] = useState<Entry[]>([]);
+  const [tail, setTail] = useState<Tail | null>(null);
+  const [unfolded, setUnfolded] = useState(false);
   const [memo, setMemo] = useState('');
   const [passcode, setPasscode] = useState('');
   const [busy, setBusy] = useState(false);
@@ -35,19 +38,19 @@ export default function Home() {
     }
   }, []);
 
-  const loadEntries = useCallback(async () => {
+  const loadTail = useCallback(async () => {
     try {
       const response = await fetch('/api/recent', { cache: 'no-store' });
-      const { entries: loaded } = await response.json();
-      setEntries(response.ok ? loaded : []);
+      const loaded = (await response.json()) as Tail;
+      setTail(response.ok ? loaded : null);
     } catch {
-      setEntries([]);
+      setTail(null);
     }
   }, []);
 
   useEffect(() => {
-    if (status?.connected && !status.locked) void loadEntries();
-  }, [status?.connected, status?.locked, loadEntries]);
+    if (status?.connected && !status.locked) void loadTail();
+  }, [status?.connected, status?.locked, loadTail]);
 
   useEffect(() => {
     const query = new URLSearchParams(window.location.search);
@@ -103,7 +106,7 @@ export default function Home() {
 
       setMemo('');
       setMessage({ kind: 'ok', text: `Appended to ${result.path} (${result.size} bytes)` });
-      void loadEntries();
+      void loadTail();
     } catch {
       setMessage({ kind: 'err', text: 'Could not reach the server.' });
     } finally {
@@ -112,7 +115,7 @@ export default function Home() {
   };
 
   const disconnect = async () => {
-    setEntries([]);
+    setTail(null);
     setBusy(true);
     try {
       await fetch('/api/auth/disconnect', { method: 'POST' });
@@ -199,32 +202,42 @@ export default function Home() {
           </div>
         </section>
       ) : (
-        <section className="panel">
-          <textarea
+        <>
+          {tail?.title && <p className="subject">{tail.title}</p>}
+          <section className="panel">
+            <textarea
             value={memo}
             placeholder="메모를 입력하세요…"
             autoFocus
             onChange={(event) => setMemo(event.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={!status}
-          />
-          <div className="row spread">
-            <span className="hint">⌘/Ctrl + Enter to append</span>
-            <button type="button" onClick={append} disabled={busy || !memo.trim()}>
-              {busy ? 'Appending…' : 'Append'}
-            </button>
-          </div>
-        </section>
+              onKeyDown={handleKeyDown}
+              disabled={!status}
+            />
+            <div className="row spread">
+              <span className="hint">⌘/Ctrl + Enter to append</span>
+              <button type="button" onClick={append} disabled={busy || !memo.trim()}>
+                {busy ? 'Appending…' : 'Append'}
+              </button>
+            </div>
+          </section>
+        </>
       )}
 
-      {entries.length > 0 && (
+      {tail && tail.body.length > 0 && (
         <section className="entries">
-          {entries.map((entry, index) => (
-            <p key={index} className="entry">
-              <span className={`kind ${entry.kind}`}>{entry.kind}:</span>{' '}
-              {entry.text}
-            </p>
-          ))}
+          {unfolded ? (
+            <pre className="body">{tail.body.join('\n')}</pre>
+          ) : (
+            tail.entries.map((entry, index) => (
+              <p key={index} className="entry">
+                <span className={`kind ${entry.kind}`}>{entry.kind}:</span>{' '}
+                {entry.text}
+              </p>
+            ))
+          )}
+          <button type="button" className="fold" onClick={() => setUnfolded(!unfolded)}>
+            {unfolded ? '▾ fold' : '▸ unfold'}
+          </button>
         </section>
       )}
 

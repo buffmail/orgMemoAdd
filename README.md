@@ -86,10 +86,11 @@ memo: 전세 만기 확인
 
 To change the shape, edit `formatEntry` in `src/lib/org.ts`.
 
-Once linked, the page also shows the `memo:` and `note:` lines already at the end
-of the file. It reads backwards from the end and stops at the first bullet or org
-heading above them, so you see only the entries belonging to the current subject —
-`recentEntries` in `src/lib/org.ts`.
+Once linked, the page shows the last org heading in the file above the memo box -
+the subject you are adding to - and the section under it below. Only headings
+(`*`, `**`, ...) count as subjects; bullets are items inside one, so they stay in
+the section. Folded, the section is just its `memo:`/`note:` lines; unfolded, it
+is every line under the heading, verbatim. `tailSection` in `src/lib/org.ts`.
 
 Dropbox has no append API, so `src/lib/dropbox.ts` downloads the file and writes it
 back with `mode=update` pinned to the revision it read, plus `strict_conflict`.
@@ -147,5 +148,5 @@ rsvg-convert -w 180 -h 180 src/app/icon.svg -o src/app/apple-icon.png   # then r
 | `POST /api/auth/disconnect` | drop the cookie |
 | `POST /api/unlock` | exchange the passcode for a cookie |
 | `POST /api/append` | `{ memo }` → appended to the org file |
-| `GET /api/recent` | the `memo:`/`note:` lines at the end of the file, back to the last bullet or heading |
+| `GET /api/recent` | `{ title, entries, body }` for the section under the last org heading |
 | `GET /api/diagnose` | what the app can actually see: app-folder listing, target metadata, `life.org` search — open it in a linked browser when a write seems to vanish |
